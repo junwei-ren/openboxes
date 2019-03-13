@@ -1049,6 +1049,51 @@ class StockMovementService {
         }
     }
 
+    void updateAdjustedItems(StockMovement stockMovement) {
+        if (stockMovement?.pickPage?.pickPageItems) {
+            stockMovement.pickPage.pickPageItems.each { PickPageItem pickPageItem ->
+                updateAdjustment(pickPageItem)
+            }
+        }
+    }
+
+    void updateAdjustedItems(PickPageItem pickPageItem) {
+        RequisitionItem requisitionItem = pickPageItem.requisitionItem
+
+        List<String> toRemove = new ArrayList<String>()
+        List<Location> availableBinLocations = new ArrayList<Location>()
+        List<ShipmentItem> shipmentItems = ShipmentItem.findAllByRequisitionItem(requisitionItem)
+
+        Picklist picklist = Picklist.findByRequisition(requisitionItem?.requisition)
+
+        for (AvailableItem availableItem in pickPageItem.availableItems) {
+            availableBinLocations.add(availableItem.binLocation)
+        }
+
+        for (PicklistItem picklistItem in requisitionItem.picklistItems) {
+            if (!availableBinLocations.contains(picklistItem.binLocation)) {
+                toRemove.add(picklistItem)
+                // remove not available items from shipment items
+                shipmentItems.each { shipmentItem ->
+                    if (shipmentItem.binLocation == picklistItem.binLocation) {
+                        shipmentItem.delete()
+                    }
+                }
+            }
+        }
+
+        // remove not available items from both picklists
+        picklist.picklistItems.removeAll(toRemove)
+        requisitionItem.picklistItems.removeAll(toRemove)
+
+        // if picklist for requisition item is empty, create a new one
+        if (requisitionItem?.picklistItems?.empty) {
+            StockMovementItem stockMovementItem = StockMovementItem.createFromRequisitionItem(requisitionItem)
+            createPicklist(stockMovementItem)
+            createMissingShipmentItem(requisitionItem)
+        }
+    }
+
     Shipment createShipment(StockMovement stockMovement) {
         log.info "create shipment " + (new JSONObject(stockMovement.toJson())).toString(4)
 

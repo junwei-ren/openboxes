@@ -134,12 +134,12 @@ const FIELDS = {
       },
       revert: {
         type: ButtonField,
-        label: 'react.default.button.undo.label',
-        defaultMessage: 'Undo',
+        label: 'react.default.button.undoEdit.label',
+        defaultMessage: 'Undo edit',
         flexWidth: '0.7',
         fieldKey: '',
-        buttonLabel: 'react.default.button.undo.label',
-        buttonDefaultMessage: 'Undo',
+        buttonLabel: 'react.default.button.undoEdit.label',
+        buttonDefaultMessage: 'Undo edit',
         getDynamicAttr: ({ fieldValue, revertUserPick, subfield }) => ({
           onClick: flattenRequest(fieldValue)['requisitionItem.id'] ? () => revertUserPick(flattenRequest(fieldValue)['requisitionItem.id']) : () => null,
           hidden: subfield,
@@ -268,7 +268,7 @@ class PickPage extends Component {
   }
 
   fetchPickPageItems() {
-    apiClient.get(`/openboxes/api/stockMovements/${this.state.values.stockMovementId}?stepNumber=4`)
+    apiClient.post(`/openboxes/api/stockMovements/${this.state.values.stockMovementId}/updateAdjustedItems`)
       .then((resp) => {
         const { pickPageItems } = resp.data.data.pickPage;
 
